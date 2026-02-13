@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Markov S&P 500 Dashboard</title>
+  <style>
+    :root {
+      --bg: #f7f6f2;
+      --panel: #ffffff;
+      --ink: #1e1b18;
+      --muted: #60584f;
+      --accent: #05668d;
+      --line: #d8d1c7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px;
+      background: radial-gradient(circle at 20% 0%, #fff8e9 0, var(--bg) 40%);
+      color: var(--ink);
+      font-family: "Trebuchet MS", "Avenir Next", sans-serif;
+    }
+    h1, h2, h3 { margin: 0 0 8px; }
+    .layout {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(12, 1fr);
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 5px 22px rgba(20, 13, 7, 0.06);
+    }
+    .full { grid-column: span 12; }
+    .half { grid-column: span 6; }
+    .third { grid-column: span 4; }
+    .muted { color: var(--muted); }
+    form {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: end;
+    }
+    label { font-size: 0.9rem; display: block; }
+    input {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.95rem;
+      width: 250px;
+    }
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 9px 14px;
+      background: var(--accent);
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .table-wrap {
+      max-height: 350px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      margin-top: 8px;
+    }
+    table.data-table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.9rem;
+    }
+    table.data-table th, table.data-table td {
+      border: 1px solid #ece7df;
+      padding: 6px 8px;
+      text-align: right;
+      white-space: nowrap;
+    }
+    table.data-table th:first-child, table.data-table td:first-child {
+      text-align: left;
+    }
+    @media (max-width: 900px) {
+      .half, .third { grid-column: span 12; }
+      input { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <section class="panel full">
+      <h1>Markov S&P 500 Dashboard</h1>
+      <p class="muted">Load CSV data, map returns to states, estimate transitions, and forecast next-day behavior.</p>
+      <form method="get">
+        <div>
+          <label for="csv_path">CSV Path</label>
+          <input id="csv_path" name="csv_path" value="{{ vm.csv_path }}">
+        </div>
+        <div>
+          <label for="down">Down Threshold</label>
+          <input id="down" name="down" value="{{ vm.down_threshold }}">
+        </div>
+        <div>
+          <label for="up">Up Threshold</label>
+          <input id="up" name="up" value="{{ vm.up_threshold }}">
+        </div>
+        <button type="submit">Run Analysis</button>
+      </form>
+      {% if error %}
+      <p style="color:#9f2a2a; margin-top:12px;"><strong>Error:</strong> {{ error }}</p>
+      {% endif %}
+    </section>
+
+    {% if not error %}
+    <section class="panel third">
+      <h3>Dataset</h3>
+      <p>Raw rows: <strong>{{ vm.raw_count }}</strong></p>
+      <p>Clean rows: <strong>{{ vm.clean_count }}</strong></p>
+      <p>Range: <strong>{{ vm.start_date }}</strong> to <strong>{{ vm.end_date }}</strong></p>
+    </section>
+
+    <section class="panel third">
+      <h3>Current View</h3>
+      <p>Current state: <strong>{{ vm.current_state }}</strong></p>
+      <p>Predicted next state: <strong>{{ vm.predicted_state }}</strong></p>
+      <p class="muted">Based on one-step Markov transition probabilities.</p>
+    </section>
+
+    <section class="panel third">
+      <h3>Next-Day Probabilities</h3>
+      {% for state, p in vm.next_probs %}
+      <p>{{ state }}: <strong>{{ "%.2f"|format(p * 100) }}%</strong></p>
+      {% endfor %}
+    </section>
+
+    <section class="panel half">
+      <h3>10-Step Simulation Demo</h3>
+      <p class="muted">1,000 simulated paths from current state using learned transitions.</p>
+      {% for state, p in vm.simulation_probs %}
+      <p>Ends in {{ state }}: <strong>{{ "%.2f"|format(p * 100) }}%</strong></p>
+      {% endfor %}
+    </section>
+
+    <section class="panel half">
+      <h3>Transition Matrix</h3>
+      <div class="table-wrap">{{ vm.matrix_html|safe }}</div>
+    </section>
+
+    <section class="panel full">
+      <h3>Recent Processed Rows</h3>
+      <p class="muted">Includes cleaned price, return, and assigned state (last 30 rows).</p>
+      <div class="table-wrap">{{ vm.recent_html|safe }}</div>
+    </section>
+
+    <section class="panel full">
+      <h3>Raw CSV Preview</h3>
+      <p class="muted">Complete CSV displayed in a scrollable table.</p>
+      <div class="table-wrap">{{ vm.raw_html|safe }}</div>
+    </section>
+    {% endif %}
+  </div>
+</body>
+</html>
