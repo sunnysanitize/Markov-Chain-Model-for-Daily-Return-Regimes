@@ -154,10 +154,7 @@ Current test suite validates:
 
 ## Notes and Limitations
 
-- This is a simple educational Markov regime model, not trading advice.
+- This is a simple Markov model for my own practice, not trading advice.
 - Uses a first-order assumption (next state depends only on current state).
-- No transaction costs, execution model, risk controls, or walk-forward validation are included by default.
+- No transaction costs, execution model, risk controls, or walk-forward validation are included.
 
-## License
-
-No license file is currently included in this repository.
